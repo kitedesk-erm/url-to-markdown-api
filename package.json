@@ -1,0 +1,17 @@
+{
+  "name": "url-to-markdown-api",
+  "version": "1.0.0",
+  "description": "Tiny zero-dependency JS/TS + Python clients for the Article Extractor & URL to Markdown API (clean Markdown/text for LLM, RAG and AI agents).",
+  "type": "module",
+  "main": "js/url-to-markdown.mjs",
+  "types": "js/url-to-markdown.d.ts",
+  "exports": { ".": { "types": "./js/url-to-markdown.d.ts", "default": "./js/url-to-markdown.mjs" } },
+  "files": ["js/"],
+  "scripts": {
+    "test": "node --test test/client.test.mjs",
+    "test:live": "UPSTREAM=https://article-extract.microapishop.workers.dev node --test test/client.test.mjs"
+  },
+  "engines": { "node": ">=18" },
+  "keywords": ["url to markdown", "article extractor", "html to markdown", "readability", "llm", "rag", "ai agent", "web scraping", "clean text", "zyla"],
+  "license": "MIT"
+}
