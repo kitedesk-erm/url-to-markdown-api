@@ -40,8 +40,16 @@ test("JS client: HTTP errors become ExtractError with status", async () => {
   } finally { g.close(); }
 });
 
+test("JS client: 502 upstream_blocked surfaces code + message (not billed)", async () => {
+  const g = await startMockGateway({ upstream: "" });
+  try {
+    await assert.rejects(extract("https://blocked.example/a", { apiKey: FAKE_KEY, endpoint: g.url }),
+      (e) => e instanceof ExtractError && e.status === 502 && e.code === "upstream_blocked" && /refused or challenged/.test(e.message));
+  } finally { g.close(); }
+});
+
 test("Python client: same contract via urllib", async () => {
-  const g = await startMockGateway();
+  const g = await startMockGateway({ upstream: "" });
   try {
     const code = `
 import sys, json; sys.path.insert(0, "python")
@@ -50,9 +58,10 @@ assert ZYLA_ENDPOINT.endswith("/14315/article+extractor+and+url+to+markdown+api/
 a = extract("https://example.com/post", api_key="${FAKE_KEY}", endpoint="${g.url}", format="text", max_chars=200)
 print(json.dumps({"title": a["title"], "has_text": "text" in a, "has_md": "markdown" in a}))
 try:
-    extract("", api_key="${FAKE_KEY}", endpoint="${g.url}")
+    extract("https://blocked.example/a", api_key="${FAKE_KEY}", endpoint="${g.url}")
+    raise SystemExit("expected ExtractError")
 except ExtractError as e:
-    print("err", e)
+    assert e.status == 502 and e.code == "upstream_blocked" and "refused or challenged" in str(e), (e.status, e.code, str(e))
 `;
     const out = await new Promise((res, rej) => {
       import("node:child_process").then(({ execFile }) =>

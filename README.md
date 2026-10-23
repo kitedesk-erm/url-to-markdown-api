@@ -90,7 +90,7 @@ print(a["markdown"])
 
 Or use it from the command line: `ZYLA_API_KEY=... python python/url_to_markdown.py https://go.dev/blog/go1.22 2000`
 
-Both clients raise an `ExtractError` with `.status` and `.body` when the call fails.
+Both clients raise an `ExtractError` with `.status`, `.code` (for example `upstream_blocked` or `empty_content`) and `.body` when the call fails. See [Errors](#errors).
 
 ## Use cases and examples
 
@@ -119,7 +119,29 @@ node examples/read-later.mjs https://overreacted.io/a-complete-guide-to-useeffec
 | `images` | `false` | Include `![alt](src)` images in the Markdown |
 | `max_chars` | `0` (no limit) | Truncate `markdown` and `text` to N characters; `truncated` is then `true` |
 
-Errors: `400` for an invalid or blocked URL or a bad parameter, `415` when the target isn't HTML or text (for example a PDF), and `502` when the target is unreachable. Calls without a valid Zyla key are rejected by the gateway.
+### Errors
+
+Every error is a non-2xx JSON response. Zyla only bills successful (200) calls, so **you aren't charged for blocked or empty pages**.
+
+| HTTP | `error` | Meaning |
+|---|---|---|
+| `400` | `invalid or missing 'url'`, `url not allowed`, bad `format` | Bad input, or a private or localhost address (including one reached by redirect) |
+| `415` | `unsupported_content_type` | The target isn't HTML or text (for example a PDF or an image). A missing content-type is sniffed. |
+| `502` | `upstream_blocked` | The site refused or challenged the request: HTTP 401/403/429/451, or a bot-challenge page such as Cloudflare's "Just a moment..." |
+| `502` | `empty_content` | The page produced about 0 words of text (rendered client-side, or empty) |
+| `502` | `fetch_failed` | The site was unreachable or timed out (10 s) |
+| `401` | | Missing or invalid Zyla key (returned by the gateway) |
+
+The 502 bodies look like this:
+
+```json
+{
+  "error": "upstream_blocked",
+  "upstream_status": 403,
+  "url": "https://www.g2.com/products/slack/reviews",
+  "message": "The target site refused or challenged the request (HTTP 403); no content was extracted. Paywalled, login-only and bot-protected pages cannot be read."
+}
+```
 
 ## Latency
 
@@ -129,12 +151,12 @@ These are 20 real calls on 2026-10-22 to the production extraction backend, each
 |---|---|---|
 | **~230 ms** | **~650 ms** | 752 ms |
 
-A repeat pass over the same URLs measured p50 139 ms and p95 497 ms. Calls through the Zyla gateway add the gateway's own overhead; Zyla's listing page shows the live average.
+A repeat pass over the same URLs measured p50 139 ms and p95 497 ms, and a third pass after the 2026-10-22 error-handling update measured p50 211 ms and p95 705 ms. Calls through the Zyla gateway add the gateway's own overhead; Zyla's listing page shows the live average.
 
 ## Limits (honest ones)
 
 - **No JavaScript rendering.** Pages that build their content only in the browser (some SPAs) return little text.
-- **Paywalls and bot walls.** You get what the site serves publicly. Check `status` and `word_count`. If a site sends a challenge page, `status` is `403`/`429` and `word_count` is close to 0.
+- **Paywalls and bot walls.** You get what the site serves publicly. Blocked or challenged requests return `502 upstream_blocked`, and nothing is billed. Some sites (for example `www.python.org`) refuse all cloud/edge traffic. Their canonical mirrors (for example `peps.python.org`) often work.
 - **Homepages and index pages** aren't articles, so expect only a few words.
 - Responses are capped at about 2 MB of HTML read per page.
 

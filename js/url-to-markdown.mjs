@@ -7,11 +7,13 @@ export const ZYLA_ENDPOINT =
   "https://zylalabs.com/api/14315/article+extractor+and+url+to+markdown+api/35883/extract+article";
 
 export class ExtractError extends Error {
-  constructor(message, status, body) {
+  constructor(message, status, body, code) {
     super(message);
     this.name = "ExtractError";
     this.status = status;
     this.body = body;
+    /** API error code, e.g. "upstream_blocked", "empty_content", "unsupported_content_type" */
+    this.code = code;
   }
 }
 
@@ -42,8 +44,9 @@ export async function extract(url, opts = {}) {
   let body;
   try { body = JSON.parse(raw); } catch { body = raw; }
   if (!res.ok) {
-    const msg = (body && (body.error || body.message)) || `HTTP ${res.status}`;
-    throw new ExtractError(`extract failed: ${msg}`, res.status, body);
+    const code = body && typeof body === "object" ? body.error : undefined;
+    const msg = [code, body && body.message].filter(Boolean).join(": ") || `HTTP ${res.status}`;
+    throw new ExtractError(`extract failed: ${msg}`, res.status, body, code);
   }
   return body;
 }

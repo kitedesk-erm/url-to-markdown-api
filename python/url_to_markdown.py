@@ -17,10 +17,11 @@ ZYLA_ENDPOINT = (
 
 
 class ExtractError(Exception):
-    def __init__(self, message, status=0, body=None):
+    def __init__(self, message, status=0, body=None, code=None):
         super().__init__(message)
         self.status = status
         self.body = body
+        self.code = code  # e.g. "upstream_blocked", "empty_content", "unsupported_content_type"
 
 
 def extract(url, api_key=None, format=None, links=None, images=None, max_chars=None,
@@ -55,8 +56,9 @@ def extract(url, api_key=None, format=None, links=None, images=None, max_chars=N
             body = json.loads(raw)
         except ValueError:
             body = raw
-        msg = body.get("error") or body.get("message") if isinstance(body, dict) else None
-        raise ExtractError("extract failed: %s" % (msg or "HTTP %d" % e.code), e.code, body)
+        code = body.get("error") if isinstance(body, dict) else None
+        msg = ": ".join(x for x in (code, body.get("message") if isinstance(body, dict) else None) if x)
+        raise ExtractError("extract failed: %s" % (msg or "HTTP %d" % e.code), e.code, body, code)
 
 
 if __name__ == "__main__":

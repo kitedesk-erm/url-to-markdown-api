@@ -39,6 +39,8 @@ export interface Article {
 export declare class ExtractError extends Error {
   status: number;
   body: unknown;
+  /** "upstream_blocked" | "empty_content" | "fetch_failed" | "unsupported_content_type" | ... */
+  code?: string;
 }
 
 export declare function extract(url: string, opts?: ExtractOptions): Promise<Article>;
