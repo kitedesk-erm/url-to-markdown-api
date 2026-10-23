@@ -6,7 +6,7 @@ This repo holds **tiny zero-dependency clients** (JS/TS using `fetch`, Python us
 
 **[Get an API key and start the 7-day free trial on Zyla](https://zylalabs.com/api-marketplace/other/article+extractor+and+url+to+markdown+api/14315)**
 
-Prefer MCP? See the companion server [`url-to-markdown-mcp`](https://github.com/kitedesk-erm/url-to-markdown-mcp) for Claude Desktop, Cursor and other MCP clients.
+Prefer MCP? See the companion server [`url-to-markdown-mcp`](https://github.com/kitedesk-erm/url-to-markdown-mcp) for Claude Desktop, Cursor and other MCP clients. Install it with `npx -y @kitedesk-erm/url-to-markdown-mcp` ([npm](https://www.npmjs.com/package/@kitedesk-erm/url-to-markdown-mcp), [Official MCP Registry](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.kitedesk-erm/url-to-markdown-mcp)).
 
 ---
 
